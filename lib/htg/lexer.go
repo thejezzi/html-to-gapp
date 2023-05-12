@@ -1,9 +1,7 @@
 package htg
 
 import (
-	"fmt"
 	"github.com/thejezzi/html-to-gapp/lib/logger"
-	"os"
 	"strings"
 )
 
@@ -14,11 +12,6 @@ type Lexer struct {
 	line         int
 	start        int
 	current      int
-}
-
-type Token struct {
-	tokenType string
-	value     string
 }
 
 func (lexer *Lexer) ScanTokens() []Token {
@@ -45,18 +38,40 @@ func (lexer *Lexer) scanToken() {
 	// html comment
 	case "<":
 		if lexer.peek() == "!" && lexer.peekNext() == "-" && lexer.peekNextTwo() == "-" {
+			logger.Debug("Found Comment")
 			lexer.Comment()
 			break
 		}
-		lexer.Tag()
+		lexer.addToken("TAG_START")
+	case ">":
+		lexer.addToken("TAG_END")
+	case "/":
+		if lexer.match(">") {
+			lexer.addToken("TAG_END_SELF_CLOSE")
+		} else {
+			lexer.addToken("TAG_END_CLOSE")
+		}
+	case "=":
+		lexer.addToken("EQUALS")
+	case "\"":
+		lexer.string()
+	case "'":
+		lexer.string()
 	default:
-		logger.Error(fmt.Sprintf("Unexpected character: %s", c))
+		if lexer.isAlphaNumeric(c) {
+			lexer.identifier()
+			break
+		}
 	}
 }
 
 func (lexer *Lexer) advance() string {
 	lexer.current++
 	return string(lexer.source[lexer.current-1])
+}
+
+func (lexer *Lexer) advanceToken() {
+	lexer.start = lexer.current
 }
 
 func (lexer *Lexer) addToken(tokenType string) {
@@ -101,64 +116,46 @@ func (lexer *Lexer) match(expected string) bool {
 }
 
 func (lexer *Lexer) Comment() {
+
+	// skip "<!--"
+	for i := 0; i < 3; i++ {
+		lexer.advance()
+	}
 	for lexer.peek() != "-" && lexer.peekNext() != "-" && lexer.peekNextTwo() != ">" && !lexer.isAtEnd() {
 		lexer.advance()
 	}
-	for i := 0; i < 3; i++ {
+
+	for i := 0; i < 4; i++ {
 		lexer.advance()
 	}
 }
 
-func (lexer *Lexer) Tag() {
-	for (lexer.peek() != ">") && !lexer.isAtEnd() {
+func (lexer *Lexer) string() {
+	for lexer.isAlphaNumeric(lexer.peek()) {
 		lexer.advance()
 	}
+	// skip closing quote
 	lexer.advance()
 
-	// A Tag has the following format:
-	// <tagname attribute="value" attribute="value">
-	// We need to extract the tagname and the attributes
+	value := lexer.source[lexer.start+1 : lexer.current-1]
+	lexer.addTokenWithLiteral("STRING", value)
+}
 
-	// Get the text
-	text := lexer.source[lexer.start+1 : lexer.current-1]
+func (lexer *Lexer) isAlphaNumeric(c string) bool {
+	return strings.Contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", c)
+}
 
-	// Get the tagname
-	tagname := strings.Split(text, " ")[0]
+func (lexer *Lexer) isHyphen(c string) bool {
+	return strings.Contains("-", c)
+}
 
-	if string(tagname[0]) == "/" {
-		lexer.addTokenWithLiteral("TAG_CLOSE", tagname[1:])
-		return
-	}
+func (lexer *Lexer) isUnderscore(c string) bool {
+	return strings.Contains("_", c)
+}
 
-	// Get the attributes text
-	attributes := text[len(tagname):]
-	// Get the attributes as a map
-	attributesMap := make(map[string]string)
-
-	for _, attribute := range strings.Split(attributes, " ") {
-		if strings.Contains(attribute, "=") {
-			attributeSplit := strings.Split(attribute, "=")
-			attributeName := attributeSplit[0]
-			attributeValue := attributeSplit[1]
-			if attributeValue[0] == '"' && attributeValue[len(attributeValue)-1] == '"' {
-				attributeValue = attributeValue[1 : len(attributeValue)-1]
-			} else {
-				logger.Error(fmt.Sprintf("Attribute value is not surrounded by quotes: %s", attributeValue))
-				os.Exit(1)
-			}
-			attributesMap[attributeName] = attributeValue
-		}
-	}
-
-	// Create the tokens
-	lexer.tokens = append(lexer.tokens, Token{"TAG", tagname})
-	for attributeName, attributeValue := range attributesMap {
-		lexer.tokens = append(lexer.tokens, Token{"ATTRIBUTE", attributeName})
-		lexer.tokens = append(lexer.tokens, Token{"ATTRIBUTE_VALUE", attributeValue})
-	}
-
-	// Get everything after the tag opening
-	for lexer.peekNext() != "<" && !lexer.isAtEnd() {
+func (lexer *Lexer) identifier() {
+	for lexer.isAlphaNumeric(lexer.peek()) || lexer.isHyphen(lexer.peek()) || lexer.isUnderscore(lexer.peek()) {
 		lexer.advance()
 	}
+	lexer.addToken("IDENTIFIER")
 }

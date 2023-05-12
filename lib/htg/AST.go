@@ -11,20 +11,20 @@ type Node struct {
 }
 
 type AST struct {
-	tree []Node
-  start int
-  current int
+	tree    []Node
+	start   int
+	current int
 }
 
 func (ast *AST) Parse(tokens []Token) {
 	for _, token := range tokens {
-    switch token.tokenType {  
-    case "TAG":
-      ast.Tag()
-    case "EOF":
-      logger.Info("EOF")
-    default:
-      logger.Error("Unexpected token type")
+		switch token.tokenType {
+		case "TAG":
+			// ast.Tag()
+		case "EOF":
+			logger.Info("EOF")
+		default:
+			logger.Error("Unexpected token type")
+		}
 	}
 }
-

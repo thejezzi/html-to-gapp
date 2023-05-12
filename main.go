@@ -10,6 +10,11 @@ import (
 )
 
 func main() {
+
+	// TestRun()
+	htg.TestRun()
+	os.Exit(0)
+
 	// Simple cli boilerplate
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: htmltogo <command>")
