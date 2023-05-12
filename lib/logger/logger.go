@@ -31,30 +31,35 @@ const (
 	RESET = 0
 )
 
-func colorize(color int, message string) string {
+func Colorize(color int, message string) string {
 	return fmt.Sprintf("\033[%dm%s\033[0m", color, message)
 }
 
 // func reset() string {
-//   return colorize(RESET, "")
+//   return Colorize(RESET, "")
 // }
 
 func Info(message string) {
-	outStr := "[" + colorize(FG_LIGHT_BLUE, "INFO") + "] " + message
+	outStr := "[" + Colorize(FG_LIGHT_BLUE, "INFO") + "] " + message
 	fmt.Println(outStr)
 }
 
 func Warn(message string) {
-	outStr := "[" + colorize(FG_LIGHT_YELLOW, "WARN") + "] " + message
+	outStr := "[" + Colorize(FG_LIGHT_YELLOW, "WARN") + "] " + message
 	fmt.Println(outStr)
 }
 
 func Error(message string) {
-	outStr := "[" + colorize(FG_LIGHT_RED, "ERROR") + "] " + message
+	outStr := "[" + Colorize(FG_LIGHT_RED, "ERROR") + "] " + message
 	fmt.Println(outStr)
 }
 
 func Debug(message string) {
-	outStr := "[" + colorize(FG_LIGHT_MAGENTA, "DEBUG") + "] " + message
+	outStr := "[" + Colorize(FG_LIGHT_MAGENTA, "DEBUG") + "] " + message
+	fmt.Println(outStr)
+}
+
+func Fatal(message string) {
+	outStr := "[" + Colorize(FG_LIGHT_RED, "FATAL") + "] " + message
 	fmt.Println(outStr)
 }

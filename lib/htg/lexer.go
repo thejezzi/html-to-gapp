@@ -1,7 +1,6 @@
 package htg
 
 import (
-	"github.com/thejezzi/html-to-gapp/lib/logger"
 	"strings"
 )
 
@@ -10,6 +9,7 @@ type Lexer struct {
 	tokens       []Token
 	currentToken int
 	line         int
+	pos          int
 	start        int
 	current      int
 }
@@ -35,11 +35,16 @@ func (lexer *Lexer) scanToken() {
 	case "\t":
 	case "\n":
 		lexer.line++
+		lexer.pos = 0
 	// html comment
 	case "<":
 		if lexer.peek() == "!" && lexer.peekNext() == "-" && lexer.peekNextTwo() == "-" {
-			logger.Debug("Found Comment")
 			lexer.Comment()
+			break
+		}
+		if lexer.peek() == "/" {
+			lexer.advance()
+			lexer.addToken("TAG_END_CLOSE")
 			break
 		}
 		lexer.addToken("TAG_START")
@@ -48,9 +53,8 @@ func (lexer *Lexer) scanToken() {
 	case "/":
 		if lexer.match(">") {
 			lexer.addToken("TAG_END_SELF_CLOSE")
-		} else {
-			lexer.addToken("TAG_END_CLOSE")
 		}
+		htg.Error(lexer.line, lexer.pos, "Unexpected character.", "Unexpected character '/'")
 	case "=":
 		lexer.addToken("EQUALS")
 	case "\"":
@@ -62,11 +66,13 @@ func (lexer *Lexer) scanToken() {
 			lexer.identifier()
 			break
 		}
+		htg.Error(lexer.line, lexer.pos, "Unexpected character.", "Unexpected character '"+c+"'")
 	}
 }
 
 func (lexer *Lexer) advance() string {
 	lexer.current++
+	lexer.pos++
 	return string(lexer.source[lexer.current-1])
 }
 
