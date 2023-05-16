@@ -24,7 +24,7 @@ func (htg *HTG) printErrPosition(hint string) {
 	prevLine := prevLineNumber + ": " + allLinesAsList[htg.lexer.line-1]
 	nextLine := nextLineNumber + ": " + allLinesAsList[htg.lexer.line+1]
 	arrowTip := strings.Repeat(" ", htg.lexer.pos+2) + "^"
-	errMsgAtPipe := strings.Repeat(" ", htg.lexer.pos+2) + "Error: "
+	errMsgAtPipe := strings.Repeat(" ", htg.lexer.pos+2) + ""
 	logger.Error(prevLine)
 	logger.Error(line)
 	logger.Error(logger.Colorize(logger.FG_RED, arrowTip))
@@ -49,29 +49,33 @@ func TestRun() {
 	// new lexer instance
 	htg = HTG{
 		lexer: &Lexer{},
+    // parser: &Parser{},
 	}
 
 	htg.lexer.source = `
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>Test</title>
-    </head>
-    <body>
-        <!-- Test -->
-        <h1 class="Testclass">Test</h1>
-        <p>Test</p>
-        <p data-bind="a001"></p>
-        <input type="text" name="test" value="test" />
-    </body>
-</html>`
+<head>
+  <title>Test</title>
+</head>
+<body>
+  <h1>Hello World</h1>
+</body>
+</html>
+`
+
 
 	logger.Info(htg.lexer.source)
 
 	// scan tokens
 	tokens := htg.lexer.ScanTokens()
+  // parser := htg.parser.Parse(tokens)
 
-	for _, token := range tokens {
-		logger.Info(token.String())
-	}
+
+  // print tokens
+  for _, token := range tokens {
+    logger.Info(token.String())
+  }
+
 
 }
