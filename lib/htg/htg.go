@@ -60,6 +60,13 @@ func TestRun() {
 </head>
 <body>
   <h1>Hello World</h1>
+  <p>This is a test</p>
+  <script>
+    var x = 1;
+    var y = 2;
+    var z = x + y;
+    console.log(z);
+  </script>
 </body>
 </html>
 `

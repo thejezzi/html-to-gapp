@@ -179,7 +179,7 @@ func (lexer *Lexer) string() {
 	lexer.advance()
 
 	value := lexer.source[lexer.start+1 : lexer.current-1]
-	lexer.addTokenWithLiteral("STRING", value)
+	lexer.addTokenWithLiteral(STRING.Type, value)
 }
 
 func (lexer *Lexer) isAlphaNumeric(c string) bool {
@@ -198,19 +198,19 @@ func (lexer *Lexer) identifier() {
 	for lexer.isAlpha(lexer.peek()) || lexer.isHyphen(lexer.peek()) || lexer.isUnderscore(lexer.peek()) {
 		lexer.advance()
 	}
-	lexer.addToken("ATTRIBUTE")
+	lexer.addToken(ATTRIBUTE.Type)
 }
 
 func (lexer *Lexer) literal() {
   for !lexer.isAtEnd() && lexer.peek() != "<" {
     lexer.advance()
   }
-  lexer.addToken("LITERAL")
+  lexer.addToken(TEXT.Type)
 }
 
 func (lexer *Lexer) tag() {
   for lexer.isAlphaNumeric(lexer.peek()) {
     lexer.advance()
   }
-  lexer.addToken("TAG")
+  lexer.addToken(NAME.Type)
 }
