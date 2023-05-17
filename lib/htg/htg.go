@@ -9,7 +9,8 @@ import (
 )
 
 type HTG struct {
-	lexer *Lexer
+	lexer  *Lexer
+	parser *Parser
 }
 
 func (htg *HTG) printErrPosition(hint string) {
@@ -48,8 +49,8 @@ var htg HTG
 func TestRun() {
 	// new lexer instance
 	htg = HTG{
-		lexer: &Lexer{},
-    // parser: &Parser{},
+		lexer:  &Lexer{},
+		parser: &Parser{},
 	}
 
 	htg.lexer.source = `
@@ -60,7 +61,15 @@ func TestRun() {
 </head>
 <body>
   <h1>Hello World</h1>
-  <p>This is a test</p>
+  <p class="Test">This is a test</p>
+  <div class="Test">
+	<p>This is a test</p>
+	<p>This is a test</p>
+	<div class="sub">
+		<p>This is a test</p>
+		<p>This is a test</p>
+	</div>
+  </div>
   <script>
     var x = 1;
     var y = 2;
@@ -71,18 +80,27 @@ func TestRun() {
 </html>
 `
 
-
 	logger.Info(htg.lexer.source)
 
 	// scan tokens
 	tokens := htg.lexer.ScanTokens()
-  // parser := htg.parser.Parse(tokens)
+	parser := htg.parser.Parse(tokens)
 
+	for _, tag := range parser {
+		printTag(tag, 0)
+	}
+}
 
-  // print tokens
-  for _, token := range tokens {
-    logger.Info(token.String())
-  }
-
-
+func printTag(tag *Tag, indent int) {
+	if tag.name == "TEXT" {
+		fmt.Println(strings.Repeat(" ", indent), tag.name, tag.value)
+	} else {
+		fmt.Println(strings.Repeat(" ", indent), tag.name)
+	}
+	for _, attr := range tag.attributes {
+		fmt.Println(strings.Repeat(" ", indent*2), attr.name+" = "+attr.value)
+	}
+	for _, child := range tag.children {
+		printTag(child, indent+2)
+	}
 }
