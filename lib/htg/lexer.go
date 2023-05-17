@@ -12,7 +12,7 @@ type Lexer struct {
 	pos          int
 	start        int
 	current      int
-  insideTag    bool
+	insideTag    bool
 }
 
 func (lexer *Lexer) ScanTokens() []Token {
@@ -32,9 +32,9 @@ func (lexer *Lexer) isAtEnd() bool {
 func (lexer *Lexer) scanToken() {
 	switch c := lexer.advance(); c {
 	case " ":
-    if lexer.insideTag && lexer.peekPrevious() == "<" {
-      htg.Error(lexer.line, lexer.pos, "Unexpected character.", "Help: Remove space after '<' character.")
-    }
+		if lexer.insideTag && lexer.peekPrevious() == "<" {
+			htg.PrettyError(lexer.line, lexer.pos, "Unexpected character.", "Help: Remove space after '<' character.")
+		}
 	case "\r":
 	case "\t":
 	case "\n":
@@ -46,47 +46,47 @@ func (lexer *Lexer) scanToken() {
 			lexer.Comment()
 			break
 		}
-    lexer.insideTag = true
-  
-    if lexer.peek() == "!" && lexer.peekNext() == "D" {
-      lexer.addToken(LEFT_ANGLE.Type)
-      lexer.advance()
-      lexer.advanceToken()
-      lexer.tag()
-      break
-    }
+		lexer.insideTag = true
+
+		if lexer.peek() == "!" && lexer.peekNext() == "D" {
+			lexer.addToken(LEFT_ANGLE.Type)
+			lexer.advance()
+			lexer.advanceToken()
+			lexer.tag()
+			break
+		}
 
 		lexer.addToken(LEFT_ANGLE.Type)
 	case ">":
 		lexer.addToken(RIGHT_ANGLE.Type)
-    lexer.insideTag = false
+		lexer.insideTag = false
 	case "/":
-    lexer.addToken(SLASH.Type)
+		lexer.addToken(SLASH.Type)
 	case "=":
 		lexer.addToken(EQUAL.Type)
 	case "\"":
-    if !lexer.insideTag {
-      lexer.literal()
-      break;
-    }
+		if !lexer.insideTag {
+			lexer.literal()
+			break
+		}
 		lexer.string()
 	default:
-    if !lexer.insideTag {
-      lexer.literal()
-      break;
-    }
+		if !lexer.insideTag {
+			lexer.literal()
+			break
+		}
 
-    if ( lexer.peekPrevious() == "<" || lexer.peekPrevious() == "/" ) && lexer.isAlpha(c) {
-      lexer.tag()
-      break
-    }
+		if (lexer.peekPrevious() == "<" || lexer.peekPrevious() == "/") && lexer.isAlpha(c) {
+			lexer.tag()
+			break
+		}
 
-    if lexer.isAlpha(c) {
-      lexer.identifier()
-      break
-    }
+		if lexer.isAlpha(c) || lexer.isSpecial(c) {
+			lexer.identifier()
+			break
+		}
 
-		htg.Error(lexer.line, lexer.pos, "Unexpected character.", "Unexpected character '"+c+"'")
+		htg.PrettyError(lexer.line, lexer.pos, "Unexpected character.", "Unexpected character '"+c+"'")
 	}
 }
 
@@ -102,10 +102,10 @@ func (lexer *Lexer) advanceToken() {
 
 func (lexer *Lexer) addToken(tokenType string) {
 	text := lexer.source[lexer.start:lexer.current]
-  // Replace all leading and trailing spaces as well as newlines
-  // with regex
-  text = strings.TrimSpace(text)
-  text = strings.Replace(text, "\n", "", -1)
+	// Replace all leading and trailing spaces as well as newlines
+	// with regex
+	text = strings.TrimSpace(text)
+	text = strings.Replace(text, "\n", "", -1)
 	lexer.addTokenWithLiteral(tokenType, text)
 }
 
@@ -121,10 +121,10 @@ func (lexer *Lexer) peek() string {
 }
 
 func (lexer *Lexer) peekPrevious() string {
-  if lexer.current-2 < 0 {
-    return "\000"
-  }
-  return string(lexer.source[lexer.current-2])
+	if lexer.current-2 < 0 {
+		return "\000"
+	}
+	return string(lexer.source[lexer.current-2])
 }
 
 func (lexer *Lexer) peekNext() string {
@@ -153,7 +153,11 @@ func (lexer *Lexer) match(expected string) bool {
 }
 
 func (lexer *Lexer) isAlpha(c string) bool {
-  return strings.Contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", c)
+	return strings.Contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", c)
+}
+
+func (lexer *Lexer) isSpecial(c string) bool {
+	return strings.Contains("-", c)
 }
 
 func (lexer *Lexer) Comment() {
@@ -202,15 +206,15 @@ func (lexer *Lexer) identifier() {
 }
 
 func (lexer *Lexer) literal() {
-  for !lexer.isAtEnd() && lexer.peek() != "<" {
-    lexer.advance()
-  }
-  lexer.addToken(TEXT.Type)
+	for !lexer.isAtEnd() && lexer.peek() != "<" {
+		lexer.advance()
+	}
+	lexer.addToken(TEXT.Type)
 }
 
 func (lexer *Lexer) tag() {
-  for lexer.isAlphaNumeric(lexer.peek()) {
-    lexer.advance()
-  }
-  lexer.addToken(NAME.Type)
+	for lexer.isAlphaNumeric(lexer.peek()) {
+		lexer.advance()
+	}
+	lexer.addToken(NAME.Type)
 }

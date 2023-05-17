@@ -6,7 +6,7 @@ type ITag interface {
 
 type Tag struct {
 	name       string
-	attributes []Attribute
+	attributes []*Attribute
 	children   []*Tag
 	value      string
 

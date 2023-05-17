@@ -2,10 +2,11 @@ package htg
 
 import (
 	"fmt"
-	"github.com/thejezzi/html-to-gapp/lib/logger"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/thejezzi/html-to-gapp/lib/logger"
 )
 
 type HTG struct {
@@ -22,21 +23,38 @@ func (htg *HTG) printErrPosition(hint string) {
 
 	allLinesAsList := strings.Split(htg.lexer.source, "\n")
 	line := lineNumber + ": " + allLinesAsList[htg.lexer.line]
-	prevLine := prevLineNumber + ": " + allLinesAsList[htg.lexer.line-1]
-	nextLine := nextLineNumber + ": " + allLinesAsList[htg.lexer.line+1]
+	var prevLine string
+	if htg.lexer.line-1 <= len(allLinesAsList) {
+		prevLine = ""
+	} else {
+		prevLine = prevLineNumber + ": " + allLinesAsList[htg.lexer.line-1]
+	}
+
+	var nextline string
+	if htg.lexer.line+1 >= len(allLinesAsList) {
+		nextline = ""
+	} else {
+		nextline = nextLineNumber + ": " + allLinesAsList[htg.lexer.line+1]
+	}
 	arrowTip := strings.Repeat(" ", htg.lexer.pos+2) + "^"
 	errMsgAtPipe := strings.Repeat(" ", htg.lexer.pos+2) + ""
 	logger.Error(prevLine)
 	logger.Error(line)
 	logger.Error(logger.Colorize(logger.FG_RED, arrowTip))
 	logger.Error(logger.Colorize(logger.FG_CYAN, errMsgAtPipe+hint))
-	logger.Error(nextLine)
+	logger.Error(nextline)
 }
 
-func (htg *HTG) Error(line, pos int, message, hint string) {
+func (htg *HTG) PrettyError(line, pos int, message, hint string) {
 	errorMsg := fmt.Sprintf("[line %d:%d] Error: %s", line, pos, message)
 	logger.Error(errorMsg)
 	htg.printErrPosition(hint)
+	os.Exit(1)
+}
+
+func (htg *HTG) Error(line, pos int, message string) {
+	errorMsg := fmt.Sprintf("[line %d:%d] Error: %s", line, pos, message)
+	logger.Error(errorMsg)
 	os.Exit(1)
 }
 
@@ -56,31 +74,16 @@ func TestRun() {
 	htg.lexer.source = `
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Test</title>
-</head>
-<body>
-  <h1>Hello World</h1>
-  <p class="Test">This is a test</p>
-  <div class="Test">
-	<p>This is a test</p>
-	<p>This is a test</p>
-	<div class="sub">
+  	<head>
+    	<title>Test</title>
+	</head>
+	<body>
+	    <h1>Hello World</h1>
 		<p>This is a test</p>
-		<p>This is a test</p>
-	</div>
-  </div>
-  <script>
-    var x = 1;
-    var y = 2;
-    var z = x + y;
-    console.log(z);
-  </script>
-</body>
+	</body>
 </html>
-`
 
-	logger.Info(htg.lexer.source)
+	`
 
 	// scan tokens
 	tokens := htg.lexer.ScanTokens()
@@ -92,14 +95,13 @@ func TestRun() {
 }
 
 func printTag(tag *Tag, indent int) {
-	if tag.name == "TEXT" {
-		fmt.Println(strings.Repeat(" ", indent), tag.name, tag.value)
-	} else {
-		fmt.Println(strings.Repeat(" ", indent), tag.name)
-	}
-	for _, attr := range tag.attributes {
-		fmt.Println(strings.Repeat(" ", indent*2), attr.name+" = "+attr.value)
-	}
+	tagname := fmt.Sprintf(strings.Repeat("  ", indent)+"%v", tag.name)
+
+	fmt.Println(tagname) //, tag.value)
+	//for _, attr := range tag.attributes {
+	//	fmt.Println(strings.Repeat("  ", indent) + "~" + attr.name + "[" + attr.value + "]")
+	//}
+
 	for _, child := range tag.children {
 		printTag(child, indent+2)
 	}
